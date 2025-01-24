@@ -1,5 +1,7 @@
 
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using StackExchangeApi.Services;
 
 namespace StackExchangeApi
 {
@@ -29,6 +31,8 @@ namespace StackExchangeApi
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            builder.Services.AddScoped<TagService, TagService>();
 
             var app = builder.Build();
 
