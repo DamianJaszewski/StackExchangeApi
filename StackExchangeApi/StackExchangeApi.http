@@ -1,0 +1,6 @@
+@StackExchangeApi_HostAddress = http://localhost:5232
+
+GET {{StackExchangeApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

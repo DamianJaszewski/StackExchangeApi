@@ -1,0 +1,13 @@
+# ASP.NET Core - Backend
+/bin/
+/obj/
+/*.log
+/appsettings.json
+/appsettings.*.json
+/secrets.json
+/.vscode/
+/.idea/
+
+# Ogólne wykluczenia systemowe
+.DS_Store
+Thumbs.db
