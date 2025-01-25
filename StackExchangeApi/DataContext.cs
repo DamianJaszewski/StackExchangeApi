@@ -7,7 +7,6 @@ namespace StackExchangeApi
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        public DbSet<Root> Roots { get; set; }
         public DbSet<Item> Items { get; set; }
         public DbSet<ExternalLink> ExternalLinks { get; set; }
         public DbSet<Collective> Collectives { get; set; }

@@ -22,19 +22,24 @@ namespace StackExchangeApi.Services
         {
             try
             {
-                string requestUrl = "https://api.stackexchange.com/2.3/tags?page=1&pagesize=100&order=desc&min=1000&max=1200&sort=popular&site=stackoverflow";
-
-                var response = await _httpClient.GetAsync(requestUrl);
-                if (!response.IsSuccessStatusCode)
+                for (int i = 1; i <= 10; i++)
                 {
-                    _logger.LogWarning("External API returned an error: {StatusCode}", response.StatusCode);
-                    throw new HttpRequestException(await response.Content.ReadAsStringAsync());
+                    string requestUrl = $"https://api.stackexchange.com/2.3/tags?page={i}&pagesize=100&order=desc&min=&max=&sort=popular&site=stackoverflow";
+
+                    var response = await _httpClient.GetAsync(requestUrl);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogWarning("External API returned an error: {StatusCode}", response.StatusCode);
+                        throw new HttpRequestException(await response.Content.ReadAsStringAsync());
+                    }
+
+                    var json = await response.Content.ReadAsStringAsync();
+                    var rootDto = JsonSerializer.Deserialize<RootDto>(json);
+                    var items = Mapper.MapToItems(rootDto);
+
+                    _context.Items.AddRange(items);
                 }
-
-                var json = await response.Content.ReadAsStringAsync();
-                var entities = JsonSerializer.Deserialize<Root>(json);
-
-                _context.Add(entities);
+                
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Data populated successfully.");
@@ -51,20 +56,19 @@ namespace StackExchangeApi.Services
             try
             {
                 _logger.LogInformation("Started calculating tag percentages.");
-                var rootsData = _context.Roots
-                    .Include(x => x.Items)
-                    .ThenInclude(y => y.Collectives)
+                var itemsData = _context.Items
+                    .Include(y => y.Collectives)
                     .ThenInclude(z => z.ExternalLinks)
-                    .FirstOrDefault();
+                    .ToList();
 
-                if (rootsData == null)
+                if (itemsData == null)
                 {
                     _logger.LogWarning("No data found in the database.");
                     return null!;
                 }
 
-                var total = rootsData.Items.Sum(x => x.Count);
-                return rootsData.Items.Select(item => new TagsPercentage
+                var total = itemsData.Sum(x => x.Count);
+                return itemsData.Select(item => new TagsPercentage
                 {
                     TagId = item.Id,
                     Name = item.Name,
@@ -85,13 +89,12 @@ namespace StackExchangeApi.Services
             {
                 _logger.LogInformation("Fetching paginated tags.");
 
-                var rootsData = _context.Roots
-                    .Include(x => x.Items)
-                    .ThenInclude(y => y.Collectives)
+                var itemsData = _context.Items
+                    .Include(y => y.Collectives)
                     .ThenInclude(z => z.ExternalLinks)
-                    .FirstOrDefault();
+                    .ToList();
 
-                if (rootsData == null)
+                if (itemsData == null)
                 {
                     _logger.LogWarning("No data found in the database for pagination.");
                     return null!;
@@ -100,15 +103,15 @@ namespace StackExchangeApi.Services
                 var items = queryParams.IsAscending
                     ? queryParams.OrderBy switch
                     {
-                        "name" => rootsData.Items.OrderByDescending(i => i.Name).ToList(),
-                        "count" => rootsData.Items.OrderByDescending(i => i.Count).ToList(),
-                        _ => rootsData.Items.ToList()
+                        "name" => itemsData.OrderByDescending(i => i.Name).ToList(),
+                        "count" => itemsData.OrderByDescending(i => i.Count).ToList(),
+                        _ => itemsData.ToList()
                     }
                     : queryParams.OrderBy switch
                     {
-                        "name" => rootsData.Items.OrderBy(i => i.Name).ToList(),
-                        "count" => rootsData.Items.OrderBy(i => i.Count).ToList(),
-                        _ => rootsData.Items.ToList()
+                        "name" => itemsData.OrderBy(i => i.Name).ToList(),
+                        "count" => itemsData.OrderBy(i => i.Count).ToList(),
+                        _ => itemsData.ToList()
                     };
 
                 return items
@@ -122,5 +125,61 @@ namespace StackExchangeApi.Services
                 throw;
             }
         }
+
+        public static class Mapper
+        {
+            public static List<Item> MapToItems(RootDto rootDto)
+            {
+                if (rootDto == null || rootDto.Items == null)
+                    return new List<Item>();
+
+                return rootDto.Items.Select(MapToItem).ToList();
+            }
+
+            private static Item MapToItem(ItemDto itemDto)
+            {
+                if (itemDto == null)
+                    throw new ArgumentNullException(nameof(itemDto));
+
+                return new Item
+                {
+                    HasSynonyms = itemDto.HasSynonyms,
+                    IsModeratorOnly = itemDto.IsModeratorOnly,
+                    IsRequired = itemDto.IsRequired,
+                    Count = itemDto.Count,
+                    Name = itemDto.Name,
+                    Collectives = itemDto.Collectives?.Select(MapToCollective).ToList() ?? new List<Collective>()
+                };
+            }
+
+            private static Collective MapToCollective(CollectiveDto collectiveDto)
+            {
+                if (collectiveDto == null)
+                    throw new ArgumentNullException(nameof(collectiveDto));
+
+                return new Collective
+                {
+                    Description = collectiveDto.Description,
+                    Link = collectiveDto.Link,
+                    Name = collectiveDto.Name,
+                    Slug = collectiveDto.Slug,
+                    Tags = collectiveDto.Tags ?? new List<string>(),
+                    ExternalLinks = collectiveDto.ExternalLinks?.Select(MapToExternalLink).ToList() ?? new List<ExternalLink>()
+                };
+            }
+
+            private static ExternalLink MapToExternalLink(ExternalLinkDto externalLinkDto)
+            {
+                if (externalLinkDto == null)
+                    throw new ArgumentNullException(nameof(externalLinkDto));
+
+                return new ExternalLink
+                {
+                    Type = externalLinkDto.Type,
+                    Link = externalLinkDto.Link
+                };
+            }
+        }
+
     }
 }

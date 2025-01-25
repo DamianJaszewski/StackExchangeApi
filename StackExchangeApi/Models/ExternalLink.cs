@@ -6,11 +6,7 @@ namespace StackExchangeApi.Models
     {
         public int Id { get; set; }
         public int CollectiveId { get; set; }
-
-        [JsonPropertyName("type")]
         public string Type { get; set; }
-
-        [JsonPropertyName("link")]
         public string Link { get; set; }
 
         [JsonIgnore]
