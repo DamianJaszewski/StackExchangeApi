@@ -24,17 +24,8 @@ namespace StackExchangeApi.Services
             {
                 for (int i = 1; i <= 10; i++)
                 {
-                    string requestUrl = $"https://api.stackexchange.com/2.3/tags?page={i}&pagesize=100&order=desc&min=&max=&sort=popular&site=stackoverflow";
+                    RootDto rootDto = await FetchDataAsync(i);
 
-                    var response = await _httpClient.GetAsync(requestUrl);
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        _logger.LogWarning("External API returned an error: {StatusCode}", response.StatusCode);
-                        throw new HttpRequestException(await response.Content.ReadAsStringAsync());
-                    }
-
-                    var json = await response.Content.ReadAsStringAsync();
-                    var rootDto = JsonSerializer.Deserialize<RootDto>(json);
                     var items = Mapper.MapToItems(rootDto);
 
                     _context.Items.AddRange(items);
@@ -122,6 +113,30 @@ namespace StackExchangeApi.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while fetching paginated tags.");
+                throw;
+            }
+        }
+
+        public async Task<RootDto> FetchDataAsync(int pageNumber)
+        {
+            try
+            {
+                string requestUrl = $"https://api.stackexchange.com/2.3/tags?page={pageNumber}&pagesize=100&order=desc&min=&max=&sort=popular&site=stackoverflow";
+                var response = await _httpClient.GetAsync(requestUrl);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("External API returned an error: {StatusCode}", response.StatusCode);
+                    throw new HttpRequestException(await response.Content.ReadAsStringAsync());
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<RootDto>(json);
+
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP request failed.");
                 throw;
             }
         }
