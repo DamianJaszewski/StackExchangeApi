@@ -9,7 +9,7 @@ namespace StackExchangeApi.Models
         public bool IsModeratorOnly { get; set; }
         public bool IsRequired { get; set; }
         public int Count { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public List<Collective> Collectives { get; set; } = new List<Collective>();
     }
 }

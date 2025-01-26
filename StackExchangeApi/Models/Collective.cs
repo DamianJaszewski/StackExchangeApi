@@ -6,10 +6,10 @@ namespace StackExchangeApi.Models
     {
         public int Id { get; set; }
         public int ItemId { get; set; }
-        public string Description { get; set; }
-        public string Link { get; set; }
-        public string Name { get; set; }
-        public string Slug { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Slug { get; set; } = string.Empty;
         public List<string> Tags { get; set; }
 
         [JsonIgnore]
