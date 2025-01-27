@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using StackExchangeApi.Controllers;
 using StackExchangeApi.Models;
 using System.Text.Json;
 
@@ -11,9 +10,9 @@ namespace StackExchangeApi.Services
         private readonly DataContext _context;
         private readonly ILogger<TagService> _logger;
 
-        public TagService(IHttpClientFactory httpClientFactory, DataContext context, ILogger<TagService> logger)
+        public TagService(HttpClient httpClient, DataContext context, ILogger<TagService> logger)
         {
-            _httpClient = httpClientFactory.CreateClient("StackExchangeClient");
+            _httpClient = httpClient;
             _context = context;
             _logger = logger;
         }
@@ -70,7 +69,7 @@ namespace StackExchangeApi.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while calculating tag percentages.");
-                throw; // Można dodać lepszą obsługę wyjątków np. CustomException
+                throw; 
             }
         }
 
@@ -122,6 +121,7 @@ namespace StackExchangeApi.Services
             try
             {
                 string requestUrl = $"https://api.stackexchange.com/2.3/tags?page={pageNumber}&pagesize=100&order=desc&min=&max=&sort=popular&site=stackoverflow";
+                _httpClient.DefaultRequestHeaders.Add("User-Agent", "YourAppName");
                 var response = await _httpClient.GetAsync(requestUrl);
 
                 if (!response.IsSuccessStatusCode)

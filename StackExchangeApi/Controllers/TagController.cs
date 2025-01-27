@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using StackExchangeApi.Models;
 using StackExchangeApi.Services;
-using System.Text.Json;
 namespace StackExchangeApi.Controllers
 {
     [ApiController]
@@ -29,7 +28,7 @@ namespace StackExchangeApi.Controllers
             var tagsPercentage = await _tagService.CalculateTagsPercentageAsync();
             if (tagsPercentage == null || !tagsPercentage.Any())
             {
-                return Ok("No data");
+                await _tagService.PopulateDataAsync();
             }
             return Ok(tagsPercentage);
         }
@@ -40,7 +39,7 @@ namespace StackExchangeApi.Controllers
             var paginatedTags = await _tagService.GetPaginatedTagsAsync(queryParams);
             if (paginatedTags == null || !paginatedTags.Any())
             {
-                return Ok("No data");
+                await _tagService.PopulateDataAsync();
             }
             return Ok(paginatedTags);
         }

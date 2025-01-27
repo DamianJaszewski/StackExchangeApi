@@ -1,0 +1,27 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: StackExchangeApi\Dockerfile
+    ports:
+      - "8080:8080"  # Mapowanie HTTP
+      - "8081:8081"  # Mapowanie HTTPS
+    depends_on:
+      - db # Wymaga, aby baza danych była uruchomiona
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=StackExchange;User Id=sa;Password=GeforceGtx123!;MultipleActiveResultSets=true;TrustServerCertificate=True
+  
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql-server
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "GeforceGtx123!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - ./init-scripts:/init-scripts
+      - ./data:/var/opt/mssql
+    # command: >
+    #   /bin/bash -c " /opt/mssql/bin/sqlservr &
+    #   sleep 30 && /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P GeforceGtx123! -d master -i /init-scripts/init.sql"
