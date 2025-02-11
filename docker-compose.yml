@@ -1,4 +1,19 @@
 services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server-stack
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "GeforceGtx123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_TLS_CERTIFICATE_STORE: "no"
+    volumes:
+      - ./init-scripts:/init-scripts
+    # command: >
+    #   /bin/bash -c " /opt/mssql/bin/sqlservr &
+    #   sleep 30 && /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P GeforceGtx123! -d master -i /init-scripts/init.sql"environment:
+
   api:
     build:
       context: .
@@ -11,17 +26,3 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Database=StackExchange;User Id=sa;Password=GeforceGtx123!;MultipleActiveResultSets=true;TrustServerCertificate=True
   
-  db:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sql-server
-    ports:
-      - "1433:1433"
-    environment:
-      SA_PASSWORD: "GeforceGtx123!"
-      ACCEPT_EULA: "Y"
-    volumes:
-      - ./init-scripts:/init-scripts
-      - ./data:/var/opt/mssql
-    # command: >
-    #   /bin/bash -c " /opt/mssql/bin/sqlservr &
-    #   sleep 30 && /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P GeforceGtx123! -d master -i /init-scripts/init.sql"

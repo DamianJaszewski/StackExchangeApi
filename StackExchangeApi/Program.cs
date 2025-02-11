@@ -1,5 +1,4 @@
-
-using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿
 using Microsoft.EntityFrameworkCore;
 using StackExchangeApi.Services;
 
@@ -32,9 +31,24 @@ namespace StackExchangeApi
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddScoped<TagService, TagService>();
+            builder.Services.AddScoped<ITagService, TagService>();
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                try
+                {
+                    Console.WriteLine("Sprawdzam bazę danych...");
+                    dbContext.Database.Migrate(); // Tworzy bazę i stosuje migracje
+                    Console.WriteLine("Baza danych gotowa!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Błąd inicjalizacji bazy danych: {ex.Message}");
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
