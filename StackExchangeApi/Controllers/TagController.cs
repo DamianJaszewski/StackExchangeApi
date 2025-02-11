@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using StackExchangeApi.Models;
 using StackExchangeApi.Services;
 namespace StackExchangeApi.Controllers
@@ -26,10 +25,6 @@ namespace StackExchangeApi.Controllers
         public async Task<IActionResult> GetTagsPercentage()
         {
             var tagsPercentage = await _tagService.CalculateTagsPercentageAsync();
-            if (tagsPercentage == null || !tagsPercentage.Any())
-            {
-                await _tagService.PopulateDataAsync();
-            }
             return Ok(tagsPercentage);
         }
 
@@ -37,10 +32,6 @@ namespace StackExchangeApi.Controllers
         public async Task<IActionResult> GetPaginatedTags([FromQuery] TagQueryParams queryParams)
         {
             var paginatedTags = await _tagService.GetPaginatedTagsAsync(queryParams);
-            if (paginatedTags == null || !paginatedTags.Any())
-            {
-                await _tagService.PopulateDataAsync();
-            }
             return Ok(paginatedTags);
         }
     }

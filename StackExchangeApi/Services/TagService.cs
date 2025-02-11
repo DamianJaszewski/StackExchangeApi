@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace StackExchangeApi.Services
 {
-    public class TagService
+    public class TagService : ITagService
     {
         private readonly HttpClient _httpClient;
         private readonly DataContext _context;
