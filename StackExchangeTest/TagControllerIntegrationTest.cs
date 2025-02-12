@@ -7,18 +7,21 @@ using StackExchangeApi.Controllers;
 using StackExchangeApi.Models;
 using StackExchangeApi.Services;
 using StackExchangeApi;
+using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net.Http;
 
 namespace StackExchangeTest
 {
-    public class TagControllerIntegrationTest
+    public class TagControllerIntegrationTest : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly DataContext _context;
         private readonly HttpClient _httpClientMock;
         private readonly Mock<ILogger<TagService>> _loggerMock;
         private readonly TagService _tagService;
         private readonly TagController _tagController;
+        private readonly HttpClient _client;
 
-        public TagControllerIntegrationTest()
+        public TagControllerIntegrationTest(WebApplicationFactory<Program> factory)
         {
             var contextOptions = new DbContextOptionsBuilder<DataContext>()
                 .UseInMemoryDatabase("TagControllerIntegrationTestDb")
@@ -30,12 +33,21 @@ namespace StackExchangeTest
 
             _tagService = new TagService(_httpClientMock, _context, _loggerMock.Object);
             _tagController = new TagController(_tagService);
+            _client = factory.CreateDefaultClient();
         }
 
         public void Dispose()
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
+        }
+
+        [Fact]
+        public async Task GetTagsPercentage_ReturnOk()
+        {
+            var response = await _client.GetAsync("/tag/percentage");
+
+            response.EnsureSuccessStatusCode();
         }
 
         [Fact]
