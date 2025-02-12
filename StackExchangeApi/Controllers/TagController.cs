@@ -7,14 +7,14 @@ namespace StackExchangeApi.Controllers
     [Route("[controller]")]
     public class TagController : ControllerBase
     {
-        private readonly TagService _tagService;
+        private readonly ITagService _tagService;
 
-        public TagController(TagService tagService)
+        public TagController(ITagService tagService)
         {
             _tagService = tagService;
         }
 
-        [HttpPost("populate")]
+        [HttpGet("populate")]
         public async Task<IActionResult> PopulateData()
         {
             await _tagService.PopulateDataAsync();
@@ -28,7 +28,7 @@ namespace StackExchangeApi.Controllers
             return Ok(tagsPercentage);
         }
 
-        [HttpGet("paginate")]
+        [HttpPost("paginate")]
         public async Task<IActionResult> GetPaginatedTags([FromQuery] TagQueryParams queryParams)
         {
             var paginatedTags = await _tagService.GetPaginatedTagsAsync(queryParams);
