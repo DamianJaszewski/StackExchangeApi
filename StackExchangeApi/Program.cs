@@ -40,13 +40,13 @@ namespace StackExchangeApi
                 var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
                 try
                 {
-                    Console.WriteLine("Sprawdzam bazę danych...");
-                    dbContext.Database.Migrate(); // Tworzy bazę i stosuje migracje
-                    Console.WriteLine("Baza danych gotowa!");
+                    Console.WriteLine("Creating database...");
+                    dbContext.Database.Migrate(); 
+                    Console.WriteLine("Database ready!");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Błąd inicjalizacji bazy danych: {ex.Message}");
+                    Console.WriteLine($"Error during implementation: {ex.Message}");
                 }
             }
 

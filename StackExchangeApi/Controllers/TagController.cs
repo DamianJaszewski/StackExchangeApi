@@ -28,7 +28,7 @@ namespace StackExchangeApi.Controllers
             return Ok(tagsPercentage);
         }
 
-        [HttpPost("paginate")]
+        [HttpGet("paginate")]
         public async Task<IActionResult> GetPaginatedTags([FromQuery] TagQueryParams queryParams)
         {
             var paginatedTags = await _tagService.GetPaginatedTagsAsync(queryParams);

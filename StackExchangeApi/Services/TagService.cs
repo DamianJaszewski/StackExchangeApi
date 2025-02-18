@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using StackExchangeApi.Models;
+﻿using StackExchangeApi.Models;
 using System.Text.Json;
 
 namespace StackExchangeApi.Services
@@ -46,15 +45,13 @@ namespace StackExchangeApi.Services
             try
             {
                 _logger.LogInformation("Started calculating tag percentages.");
-                var itemsData = _context.Items
-                    .Include(y => y.Collectives)
-                    .ThenInclude(z => z.ExternalLinks)
-                    .ToList();
+                var itemsData = _context.Items.ToList();
 
-                if (itemsData == null)
+                if (!itemsData.Any())
                 {
                     _logger.LogWarning("No data found in the database.");
-                    return null!;
+                    await PopulateDataAsync();
+                    itemsData = _context.Items.ToList();
                 }
 
                 var total = itemsData.Sum(x => x.Count);
@@ -79,15 +76,13 @@ namespace StackExchangeApi.Services
             {
                 _logger.LogInformation("Fetching paginated tags.");
 
-                var itemsData = _context.Items
-                    .Include(y => y.Collectives)
-                    .ThenInclude(z => z.ExternalLinks)
-                    .ToList();
+                var itemsData = _context.Items.ToList();
 
-                if (itemsData == null)
+                if (!itemsData.Any())
                 {
                     _logger.LogWarning("No data found in the database for pagination.");
-                    return null!;
+                    await PopulateDataAsync();
+                    itemsData = _context.Items.ToList();
                 }
 
                 var items = queryParams.IsAscending
