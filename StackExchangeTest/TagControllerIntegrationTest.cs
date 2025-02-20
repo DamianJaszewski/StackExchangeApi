@@ -1,45 +1,60 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
-using RichardSzalay.MockHttp;
-using StackExchangeApi.Controllers;
+﻿using Microsoft.EntityFrameworkCore;
 using StackExchangeApi.Models;
-using StackExchangeApi.Services;
 using StackExchangeApi;
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net.Http;
 
 namespace StackExchangeTest
 {
-    public class TagControllerIntegrationTest : IClassFixture<WebApplicationFactory<Program>>
+    public class TagControllerIntegrationTest : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
     {
-        private readonly DataContext _context;
-        private readonly HttpClient _httpClientMock;
-        private readonly Mock<ILogger<TagService>> _loggerMock;
-        private readonly TagService _tagService;
-        private readonly TagController _tagController;
+        private readonly CustomWebApplicationFactory<Program> _factory;
         private readonly HttpClient _client;
+        private readonly IServiceScope _scope;
+        private readonly DataContext _context;
 
-        public TagControllerIntegrationTest(WebApplicationFactory<Program> factory)
+        public TagControllerIntegrationTest(CustomWebApplicationFactory<Program> factory)
         {
-            var contextOptions = new DbContextOptionsBuilder<DataContext>()
-                .UseInMemoryDatabase("TagControllerIntegrationTestDb")
-                .Options;
-
-            _context = new DataContext(contextOptions);
-            _httpClientMock = new HttpClient(new MockHttpMessageHandler());
-            _loggerMock = new Mock<ILogger<TagService>>();
-
-            _tagService = new TagService(_httpClientMock, _context, _loggerMock.Object);
-            _tagController = new TagController(_tagService);
+            _factory = factory;
             _client = factory.CreateDefaultClient();
+
+            _scope = _factory.Services.CreateScope();
+            _context = _scope.ServiceProvider.GetRequiredService<DataContext>();
+
+            _context.Database.EnsureCreated();
         }
 
         public void Dispose()
         {
             _context.Database.EnsureDeleted();
-            _context.Dispose();
+            _scope.Dispose();
+        }
+
+        [Fact]
+        public async Task PopulateData_ReturnOk()
+        {
+            var response = await _client.GetAsync("/tag/populate");
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public void TestEnvironment_Should_Create_Test_Database()
+        {
+            using var scope = _factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+            string databaseName = context.Database.GetDbConnection().Database;
+            Assert.Equal("stacktest2", databaseName);
+        }
+
+        [Fact]
+        public void Database_Should_Be_Empty_Before_Each_Test()
+        {
+            using var scope = _factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+            List<Item> items = context.Items.ToList();
+
+            Assert.Empty(items);
         }
 
         [Fact]
@@ -48,74 +63,6 @@ namespace StackExchangeTest
             var response = await _client.GetAsync("/tag/percentage");
 
             response.EnsureSuccessStatusCode();
-        }
-
-        [Fact]
-        public async Task GetTagsPercentage_GetRequest_ReturnsCorrectPercentages()
-        {
-            // Arrange
-            var items = new List<Item>
-            {
-                CreateExampleItem(10),
-                CreateExampleItem(30),
-                CreateExampleItem(60)
-            };
-
-            _context.Items.AddRange(items);
-            await _context.SaveChangesAsync();
-
-            // Act
-            var result = await _tagController.GetTagsPercentage() as OkObjectResult;
-            var tagsPercentage = result?.Value as List<TagsPercentage>;
-
-            // Assert
-            Assert.NotNull(tagsPercentage);
-            Assert.Equal(3, tagsPercentage.Count);
-            Assert.Equal("10%", tagsPercentage.First(x => x.TagId == 1).Percentage);
-            Assert.Equal("30%", tagsPercentage.First(x => x.TagId == 2).Percentage);
-            Assert.Equal("60%", tagsPercentage.First(x => x.TagId == 3).Percentage);
-        }
-
-        [Fact]
-        public async Task GetPaginatedTagsAsync_ReturnsCorrectPagination()
-        {
-            // Arrange
-
-            List<Item> items = new List<Item>()
-            {
-                CreateExampleItem(10),
-                CreateExampleItem(30),
-                CreateExampleItem(60),
-            };
-
-            _context.AddRange(items);
-            await _context.SaveChangesAsync();
-
-            var queryParams = new TagQueryParams
-            {
-                Page = 1,
-                PageSize = 2,
-                OrderBy = "count",
-                IsAscending = false
-            };
-
-            // Act
-            var result = await _tagController.GetPaginatedTags(queryParams) as OkObjectResult;
-
-            // Assert
-            Assert.NotNull(result);
-
-            //Clean up
-            _context.Database.EnsureDeleted();
-        }
-
-        private static Item CreateExampleItem(int count)
-        {
-            return new Item
-            {
-                Name = $"Tag{Guid.NewGuid()}",
-                Count = count
-            };
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Logging;
 using Moq;
 using RichardSzalay.MockHttp;
 using StackExchangeApi;
@@ -12,7 +11,6 @@ namespace StackExchangeTest
 {
     public class TagServiceUnitTest
     {
-        private readonly Mock<DataContext> _contextMock;
         private readonly HttpClient _httpClientMock;
         private readonly Mock<ILogger<TagService>> _loggerMock;
         private readonly DataContext _context;
@@ -33,6 +31,7 @@ namespace StackExchangeTest
             _tagService = new TagService(_httpClientMock, _context, _loggerMock.Object);
         }
 
+        [Fact]
         public void Dispose()
         {
             _context.Dispose();
