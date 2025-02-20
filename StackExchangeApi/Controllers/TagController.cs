@@ -22,14 +22,14 @@ namespace StackExchangeApi.Controllers
         }
 
         [HttpGet("percentage")]
-        public async Task<IActionResult> GetTagsPercentage()
+        public async Task<ActionResult<TagsPercentage>> GetTagsPercentage()
         {
             var tagsPercentage = await _tagService.CalculateTagsPercentageAsync();
             return Ok(tagsPercentage);
         }
 
         [HttpGet("paginate")]
-        public async Task<IActionResult> GetPaginatedTags([FromQuery] TagQueryParams queryParams)
+        public async Task<ActionResult<Item>> GetPaginatedTags([FromQuery] TagQueryParams queryParams)
         {
             var paginatedTags = await _tagService.GetPaginatedTagsAsync(queryParams);
             return Ok(paginatedTags);
