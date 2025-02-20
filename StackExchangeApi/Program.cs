@@ -32,6 +32,8 @@ namespace StackExchangeApi
             });
 
             builder.Services.AddScoped<ITagService, TagService>();
+            builder.Services.AddScoped<IMapper, Mapper>();
+            builder.Services.AddScoped<IDataFetcher, DataFetcher>();
 
             var app = builder.Build();
 

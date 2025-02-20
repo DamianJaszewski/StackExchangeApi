@@ -1,19 +1,20 @@
 ﻿using StackExchangeApi.Models;
-using System.Text.Json;
 
 namespace StackExchangeApi.Services
 {
     public class TagService : ITagService
     {
-        private readonly HttpClient _httpClient;
         private readonly DataContext _context;
         private readonly ILogger<TagService> _logger;
+        private readonly IDataFetcher _dataFetcher;
+        private readonly IMapper _mapper;
 
-        public TagService(HttpClient httpClient, DataContext context, ILogger<TagService> logger)
+        public TagService(DataContext context, ILogger<TagService> logger, IDataFetcher dataFetcher, IMapper mapper)
         {
-            _httpClient = httpClient;
             _context = context;
             _logger = logger;
+            _dataFetcher = dataFetcher;
+            _mapper = mapper;   
         }
 
         public async Task PopulateDataAsync()
@@ -22,9 +23,9 @@ namespace StackExchangeApi.Services
             {
                 for (int i = 1; i <= 10; i++)
                 {
-                    RootDto rootDto = await FetchDataAsync(i);
+                    RootDto rootDto = await _dataFetcher.FetchDataAsync(i);
 
-                    var items = Mapper.MapToItems(rootDto);
+                    var items = _mapper.MapToItems(rootDto);
 
                     _context.Items.AddRange(items);
                 }
@@ -110,86 +111,5 @@ namespace StackExchangeApi.Services
                 throw;
             }
         }
-
-        public async Task<RootDto> FetchDataAsync(int pageNumber)
-        {
-            try
-            {
-                string requestUrl = $"https://api.stackexchange.com/2.3/tags?page={pageNumber}&pagesize=100&order=desc&min=&max=&sort=popular&site=stackoverflow";
-                _httpClient.DefaultRequestHeaders.Add("User-Agent", "YourAppName");
-                var response = await _httpClient.GetAsync(requestUrl);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("External API returned an error: {StatusCode}", response.StatusCode);
-                    throw new HttpRequestException(await response.Content.ReadAsStringAsync());
-                }
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<RootDto>(json);
-
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP request failed.");
-                throw;
-            }
-        }
-
-        public static class Mapper
-        {
-            public static List<Item> MapToItems(RootDto rootDto)
-            {
-                if (rootDto == null || rootDto.Items == null)
-                    return new List<Item>();
-
-                return rootDto.Items.Select(MapToItem).ToList();
-            }
-
-            private static Item MapToItem(ItemDto itemDto)
-            {
-                if (itemDto == null)
-                    throw new ArgumentNullException(nameof(itemDto));
-
-                return new Item
-                {
-                    HasSynonyms = itemDto.HasSynonyms,
-                    IsModeratorOnly = itemDto.IsModeratorOnly,
-                    IsRequired = itemDto.IsRequired,
-                    Count = itemDto.Count,
-                    Name = itemDto.Name,
-                    Collectives = itemDto.Collectives?.Select(MapToCollective).ToList() ?? new List<Collective>()
-                };
-            }
-
-            private static Collective MapToCollective(CollectiveDto collectiveDto)
-            {
-                if (collectiveDto == null)
-                    throw new ArgumentNullException(nameof(collectiveDto));
-
-                return new Collective
-                {
-                    Description = collectiveDto.Description,
-                    Link = collectiveDto.Link,
-                    Name = collectiveDto.Name,
-                    Slug = collectiveDto.Slug,
-                    Tags = collectiveDto.Tags ?? new List<string>(),
-                    ExternalLinks = collectiveDto.ExternalLinks?.Select(MapToExternalLink).ToList() ?? new List<ExternalLink>()
-                };
-            }
-
-            private static ExternalLink MapToExternalLink(ExternalLinkDto externalLinkDto)
-            {
-                if (externalLinkDto == null)
-                    throw new ArgumentNullException(nameof(externalLinkDto));
-
-                return new ExternalLink
-                {
-                    Type = externalLinkDto.Type,
-                    Link = externalLinkDto.Link
-                };
-            }
-        }
-
     }
 }
