@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StackExchangeApi.Models;
 using StackExchangeApi;
+using Microsoft.AspNetCore.TestHost;
+using StackExchangeApi.Services;
 
 namespace StackExchangeTest
 {
@@ -14,12 +16,17 @@ namespace StackExchangeTest
         public TagControllerIntegrationTest(CustomWebApplicationFactory<Program> factory)
         {
             _factory = factory;
-            _client = factory.CreateDefaultClient();
-
             _scope = _factory.Services.CreateScope();
             _context = _scope.ServiceProvider.GetRequiredService<DataContext>();
-
             _context.Database.EnsureCreated();
+
+            _client = factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton<IDataFetcher, FakeDataFetcher>();
+                });
+            }).CreateClient();
         }
 
         public void Dispose()
@@ -34,6 +41,18 @@ namespace StackExchangeTest
             var response = await _client.GetAsync("/tag/populate");
 
             response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task PopulateData_Should_Return_Data()
+        {
+            var product = await _client.GetAsync($"/tag/populate");
+
+            var items = _context.Items.ToList();
+
+            // Then - sprawdzenie wyniku
+            Assert.NotNull(product);
+            Assert.Equal(30, items.Count);
         }
 
         [Fact]
@@ -63,6 +82,15 @@ namespace StackExchangeTest
             var response = await _client.GetAsync("/tag/percentage");
 
             response.EnsureSuccessStatusCode();
+        }
+
+        private static Item CreateExampleItem(int count)
+        {
+            return new Item
+            {
+                Name = $"Tag{Guid.NewGuid()}",
+                Count = count
+            };
         }
     }
 }

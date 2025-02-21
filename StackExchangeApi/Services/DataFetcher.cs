@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using StackExchangeApi.Models;
-using System.Net.Http;
+﻿using StackExchangeApi.Models;
 using System.Text.Json;
 
 namespace StackExchangeApi.Services
