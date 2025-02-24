@@ -3,6 +3,7 @@ using StackExchangeApi.Models;
 using StackExchangeApi;
 using Microsoft.AspNetCore.TestHost;
 using StackExchangeApi.Services;
+using Microsoft.Extensions.DependencyModel;
 
 namespace StackExchangeTest
 {
@@ -82,6 +83,28 @@ namespace StackExchangeTest
             var response = await _client.GetAsync("/tag/percentage");
 
             response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task GetTagsPercentage_ReturnListOfItems()
+        {
+            var response = await _client.GetFromJsonAsync<List<TagsPercentage>>("/tag/percentage");
+
+            var items = _context.Items.ToList();
+
+            Assert.NotNull(response);
+            Assert.Equal(30, response.Count);
+        }
+
+        [Fact]
+        public async Task GetTagsPercentage_ReturnsExpectedTagsPercentage()
+        {
+            var response = await _client.GetFromJsonAsync<List<TagsPercentage>>("/tag/percentage");
+
+            var items = _context.Items.ToList();
+
+            Assert.NotNull(response);
+            Assert.Equal("1%", response.First().Percentage);
         }
 
         private static Item CreateExampleItem(int count)
